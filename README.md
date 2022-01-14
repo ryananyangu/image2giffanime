@@ -1,34 +1,192 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Animated fade away gifs from image
 
-## Getting Started
+This is a small project that showcases the usage of cloudinary api's
+in combination with typescript nextjs to transform and image to gif as a fadeout.
 
-First, run the development server:
+## Project initialization and setup
+
+### Initiatilization of next js with typescript project
+
+First we initialize an empty next js project.
+Using the commands below. The command will prompt you to name your project.
 
 ```bash
-npm run dev
+npx create-next-app@latest --typescript
 # or
-yarn dev
+yarn create next-app --typescript
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Once initialization is complete you can confirm that initial setup is complete by running.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+```bash
+yarn dev
+# OR
+npm run dev
+```
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+After running the above command visit [localhost port 3000](http://localhost:3000)
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+## Dependancies definations and additions
 
-## Learn More
+1. html2canvas
+2. cloudinary
+3. gifshot
+4. styled-components
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+yarn add html2canvas
+yarn add gifshot
+yarn add cloudinary
+yarn add styled-components
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Additonal setup for gifshot
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Add the following line of code in ./pages/api/decs.d.ts file
+To enable import and export of the module within the project
 
-## Deploy on Vercel
+```ts
+declare module "gifshot";
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Cloudinary environment setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Initialize instance of cloudinary module with configs/secrets from
+that were setup in the .env file. in the root directoty.
+
+```js
+var cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+```
+
+## Development steps
+
+- [X] Setup demonstration image in public folder.
+- [X] link the image to an image tag in App class renderer
+- [X] Retrieve the html image tag and convert the element to canvas using html2canvas library
+- [X] Generate 6 other canvases (Due to storage contrainsts) while fading out the pixels in each canvas.
+- [X] Take the generated list of canvases convert them into data urls array
+- [X] Combine the images to gif using gifshot library
+- [X] Upload the generated video/gif to cloudinary for storage.
+- [X] Display the generated fadeout/disintegration gif
+
+### link the image to an image tag in App class renderer
+
+```tsx
+<Main>
+    <div className="inner">
+        {loading ? (
+        <div>Processing ... </div>
+        ) : (
+        <Image
+            id="world"
+            src={gif_image ? gif_image : `/goat.jpg`}
+            alt=""
+        />
+        )}
+        <br />
+        {url ? <div>{url}</div> : ""}
+        {!loading && <button onClick={this.snap.bind(this)}>Snap</button>}
+    </div>
+</Main>
+```
+
+### Retrieve the html image tag and convert the element to canvas using html2canvas library
+
+```ts
+// convert img tag to canvas
+const canvas = await html2canvas(img as HTMLElement);
+const ctx = canvas.getContext("2d");
+if (!ctx) return;
+// Getting image data from the canvas for pixel manupilation
+const image_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+if (!image_data) return;
+const pixel_arr = image_data.data;
+```
+
+### Generate 6 other canvases while fading out the pixels in each canvas
+
+```ts
+const image_data_array = this.createBlankImageArray(image_data);
+//put pixel info to imageDataArray (Weighted Distributed)
+for (let i = 0; i < pixel_arr.length; i++) {
+    const p = Math.floor((i / pixel_arr.length) * CANVAS_COUNT);
+
+    const dist = Math.round(Math.random() * (CANVAS_COUNT - 1));
+
+    const a = image_data_array[dist];
+    a[i] = pixel_arr[i];
+    a[i + 1] = pixel_arr[i + 1];
+    a[i + 2] = pixel_arr[i + 2];
+    a[i + 3] = pixel_arr[i + 3];
+}
+```
+
+### Take the generated list of canvases convert them into data urls array
+
+```ts
+// fadeout image list generation and mapping
+const images = new Array(CANVAS_COUNT)
+    .fill(0)
+    .map((_, i) =>
+    this.createCanvasFromImageData(
+        image_data_array[i],
+        canvas.width,
+        canvas.height
+    ).toDataURL()
+    );
+```
+
+### Combine the images to gif using gifshot library
+
+```ts
+gifshot.createGIF(
+    {
+        images,
+        gifWidth: canvas.width,
+        gifHeight: canvas.height,
+        numFrames: CANVAS_COUNT
+    },
+    (obj: any) => {
+        if (obj.error) {
+            console.log(obj.error);
+            return;
+        }
+        console.log(obj.image);
+        this.uploadVideoCloudinary(obj.image);
+        this.setState({ gif_image: obj.image, loading: false });
+    }
+);
+```
+
+### Upload the generated video/gif to cloudinary for storage
+
+```ts
+// https://rv7py.sse.codesandbox.io/
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<Data>
+) {
+  if (req.method === "POST") {
+    let fileStr: string = req.body.data;
+    let uploadResponse: any;
+
+    try {
+      uploadResponse = await cloudinary.uploader.upload_large(fileStr, {
+        resource_type: "auto",
+        chunk_size: 6000000,
+        timeout: 60000
+      });
+      console.log(uploadResponse);
+    } catch (err) {
+      console.log(err);
+    }
+    res.status(200).json({ name: "" + uploadResponse.secure_url });
+  }
+}
+```
