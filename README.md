@@ -49,21 +49,6 @@ To enable import and export of the module within the project
 declare module "gifshot";
 ```
 
-## Cloudinary environment setup
-
-Initialize instance of cloudinary module with configs/secrets from
-that were setup in the .env file. in the root directoty.
-
-```js
-var cloudinary = require("cloudinary").v2;
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-```
-
 ## Development steps
 
 - [X] Setup demonstration image in public folder.
@@ -165,6 +150,43 @@ gifshot.createGIF(
 ```
 
 ### Upload the generated video/gif to cloudinary for storage
+This article will use cloudinary for media upload and storage. Use this [link](https://cloudinary.com/?ap=em) to access cloudinary website and sign up or login to receive your environment variables(`Cloud name` , `API Key` and `API Secret`). The mentioned variables will be found in your dashboard which should look like below:
+![Cloudinary Dashboard](https://res.cloudinary.com/hackit-africa/image/upload/v1623006780/cloudinary-dashboard.png "Cloudinary Dashboard").
+
+Create a file named `.env` at the root of your project. The file is where we store our environment variables. Paste the following code in the file
+```
+CLOUDINARY_NAME = ""
+
+CLOUDINARY_API_KEY =  ""
+
+CLOUDINARY_API_SECRET= ""
+  ```
+Ensure to fill in the blanks with your respective environment variables then restart the project server for the project to update its envs.
+
+Head to the `./pages/api` directory and create a file named `upload.tsx`. In the file we wil access the cloudinary API to uplload our files and receive the cloudinary file URL.
+
+Start by including the necessary imports  
+```
+import type { NextApiRequest, NextApiResponse } from 'next'
+var cloudinary = require('cloudinary').v2
+```
+Intergrate your environment variables with the API backend like below:
+
+```ts
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+```
+Since we are using typescript, we will include a type system to represent the type of value that will be used in our backend. In our case, the value will be a string.
+```
+type Data = {
+    name: string
+}
+```
+We can then inroduce a handler function that receives a post request and processes a response feedback for our front end.
+
 
 ```ts
 // https://rv7py.sse.codesandbox.io/
@@ -190,3 +212,7 @@ export default async function handler(
   }
 }
 ```
+
+The code above receives the request body and uploads it to cloudinary. Ith then captures the sent file's cloudinary URL and sends it back to the front end as a response.
+
+Thats it! we've completed our project backend.

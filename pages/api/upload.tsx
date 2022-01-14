@@ -11,15 +11,7 @@ cloudinary.config({
 type Data = {
     name: string
 }
-
-export const config = {
-    api: {
-        bodyParser: {
-            sizeLimit: "200mb",
-        },
-    },
-};
-
+ 
 export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse<Data>

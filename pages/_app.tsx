@@ -6,7 +6,7 @@ import gifshot from 'gifshot'
 
 
 
-const CANVAS_COUNT = 5
+const CANVAS_COUNT = 6
 
 interface Props { }
 
