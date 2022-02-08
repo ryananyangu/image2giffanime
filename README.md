@@ -62,7 +62,7 @@ declare module "gifshot";
 
 ### link the image to an image tag in App class renderer
 
-```tsx
+```_app.tsx
 <Main>
     <div className="inner">
         {loading ? (
@@ -83,7 +83,7 @@ declare module "gifshot";
 
 ### Retrieve the html image tag and convert the element to canvas using html2canvas library
 
-```ts
+```_app.tsx
 // convert img tag to canvas
 const canvas = await html2canvas(img as HTMLElement);
 const ctx = canvas.getContext("2d");
@@ -96,7 +96,7 @@ const pixel_arr = image_data.data;
 
 ### Generate 6 other canvases while fading out the pixels in each canvas
 
-```ts
+```_app.tsx
 const image_data_array = this.createBlankImageArray(image_data);
 //put pixel info to imageDataArray (Weighted Distributed)
 for (let i = 0; i < pixel_arr.length; i++) {
@@ -114,7 +114,7 @@ for (let i = 0; i < pixel_arr.length; i++) {
 
 ### Take the generated list of canvases convert them into data urls array
 
-```ts
+```_app.tsx
 // fadeout image list generation and mapping
 const images = new Array(CANVAS_COUNT)
     .fill(0)
@@ -129,7 +129,7 @@ const images = new Array(CANVAS_COUNT)
 
 ### Combine the images to gif using gifshot library
 
-```ts
+```_app.tsx
 gifshot.createGIF(
     {
         images,
@@ -172,7 +172,7 @@ var cloudinary = require('cloudinary').v2
 ```
 Intergrate your environment variables with the API backend like below:
 
-```ts
+```upload.tsx
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -188,7 +188,7 @@ type Data = {
 We can then inroduce a handler function that receives a post request and processes a response feedback for our front end.
 
 
-```ts
+```upload.tsx
 // https://rv7py.sse.codesandbox.io/
 export default async function handler(
   req: NextApiRequest,
