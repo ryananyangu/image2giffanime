@@ -166,7 +166,7 @@ Ensure to fill in the blanks with your respective environment variables then res
 Head to the `./pages/api` directory and create a file named `upload.tsx`. In the file we wil access the cloudinary API to uplload our files and receive the cloudinary file URL.
 
 Start by including the necessary imports  
-```
+```upload.tsx
 import type { NextApiRequest, NextApiResponse } from 'next'
 var cloudinary = require('cloudinary').v2
 ```
